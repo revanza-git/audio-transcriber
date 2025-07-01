@@ -197,6 +197,19 @@ def create_docx(text: str, filename: str) -> str:
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error creating DOCX: {str(e)}")
 
+def create_txt(text: str, filename: str) -> str:
+    """Create a TXT file with the transcribed text"""
+    try:
+        output_path = OUTPUT_DIR / f"{filename}.txt"
+        with open(output_path, 'w', encoding='utf-8') as f:
+            f.write(f"Audio Transcription\n")
+            f.write(f"==================\n")
+            f.write(f"Source File: {filename}\n\n")
+            f.write(text)
+        return str(output_path)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error creating TXT: {str(e)}")
+
 @app.post("/transcribe")
 async def transcribe_audio_endpoint(
     file: UploadFile = File(...),
@@ -215,6 +228,14 @@ async def transcribe_audio_endpoint(
         raise HTTPException(
             status_code=400, 
             detail=f"Unsupported file format. Supported formats: {', '.join(SUPPORTED_FORMATS)}"
+        )
+    
+    # Validate output format
+    valid_output_formats = {"text", "docx", "txt"}
+    if output_format not in valid_output_formats:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid output format. Supported formats: {', '.join(valid_output_formats)}"
         )
     
     # Validate timeout using environment limits
@@ -246,7 +267,7 @@ async def transcribe_audio_endpoint(
             
             if output_format == "docx":
                 # Create DOCX file
-                docx_path = create_docx(transcribed_text, file.filename)
+                docx_path = create_docx(transcribed_text, Path(file.filename).stem)
                 
                 # Return DOCX file
                 return FileResponse(
@@ -254,8 +275,18 @@ async def transcribe_audio_endpoint(
                     media_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document',
                     filename=f"{Path(file.filename).stem}_transcription.docx"
                 )
+            elif output_format == "txt":
+                # Create TXT file
+                txt_path = create_txt(transcribed_text, Path(file.filename).stem)
+                
+                # Return TXT file
+                return FileResponse(
+                    txt_path,
+                    media_type='text/plain',
+                    filename=f"{Path(file.filename).stem}_transcription.txt"
+                )
             else:
-                # Return JSON response
+                # Return JSON response (text format)
                 word_count = len(transcribed_text.split())
                 character_count = len(transcribed_text)
                 

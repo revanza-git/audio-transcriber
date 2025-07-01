@@ -38,7 +38,9 @@ const AudioTranscriber: React.FC = () => {
   const [progress, setProgress] = useState(0);
   const [result, setResult] = useState<TranscriptionResult | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [outputFormat, setOutputFormat] = useState<"text" | "docx">("text");
+  const [outputFormat, setOutputFormat] = useState<"text" | "docx" | "txt">(
+    "text"
+  );
   const [dragActive, setDragActive] = useState(false);
   const [serverStatus, setServerStatus] = useState<string>("unknown");
   const [language, setLanguage] = useState<string>("auto");
@@ -278,6 +280,26 @@ const AudioTranscriber: React.FC = () => {
           word_count: 0,
           character_count: 0,
         });
+      } else if (outputFormat === "txt") {
+        // Handle TXT download
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.style.display = "none";
+        a.href = url;
+        a.download = `${file.name.split(".")[0]}_transcription.txt`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+
+        // Set a success result for UI feedback
+        setResult({
+          filename: file.name,
+          transcription: "TXT file downloaded successfully.",
+          word_count: 0,
+          character_count: 0,
+        });
       } else {
         // Handle JSON response
         const data = await response.json();
@@ -448,7 +470,9 @@ const AudioTranscriber: React.FC = () => {
             <label className="text-sm font-medium">Output Format</label>
             <Select
               value={outputFormat}
-              onValueChange={(value: "text" | "docx") => setOutputFormat(value)}
+              onValueChange={(value: "text" | "docx" | "txt") =>
+                setOutputFormat(value)
+              }
             >
               <SelectTrigger className="w-full">
                 <SelectValue />
@@ -456,6 +480,7 @@ const AudioTranscriber: React.FC = () => {
               <SelectContent>
                 <SelectItem value="text">Text (JSON Response)</SelectItem>
                 <SelectItem value="docx">Word Document (.docx)</SelectItem>
+                <SelectItem value="txt">Plain Text File (.txt)</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -624,14 +649,16 @@ const AudioTranscriber: React.FC = () => {
                     </Button>
                   </>
                 )}
-                {outputFormat === "docx" && (
+                {(outputFormat === "docx" || outputFormat === "txt") && (
                   <div className="text-center py-4">
                     <CheckCircle className="mx-auto h-12 w-12 text-green-600 mb-2" />
                     <p className="text-lg font-medium">
-                      Document Downloaded Successfully!
+                      {outputFormat === "docx" ? "Document" : "Text File"}{" "}
+                      Downloaded Successfully!
                     </p>
                     <p className="text-sm text-muted-foreground">
-                      Check your downloads folder for the transcribed document.
+                      Check your downloads folder for the transcribed{" "}
+                      {outputFormat === "docx" ? "document" : "text file"}.
                     </p>
                   </div>
                 )}

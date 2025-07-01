@@ -6,7 +6,7 @@ A modern web application that converts audio files to text using AI-powered spee
 
 - 🎵 Support for multiple audio formats (MP3, WAV, M4A, FLAC, OGG, WMA, AAC, MPEG, MPG, MP4)
 - 🤖 AI-powered transcription using OpenAI Whisper
-- 📄 Export options: Plain text or Word document (.docx)
+- 📄 Export options: Plain text, Word document (.docx), or text file (.txt)
 - 🖱️ Drag & drop file upload
 - 📊 Real-time progress tracking
 - 🎨 Modern, responsive UI with dark/light mode support
@@ -161,7 +161,7 @@ The web app will be available at `http://localhost:5173`
 **Parameters:**
 
 - `file`: Audio file (multipart/form-data)
-- `output_format`: "text" or "docx" (optional, default: "text")
+- `output_format`: "text", "docx", or "txt" (optional, default: "text")
 
 **Example using curl:**
 
@@ -176,6 +176,12 @@ curl -X POST "http://localhost:8000/transcribe" \
   -F "file=@your_audio.mp3" \
   -F "output_format=docx" \
   --output transcription.docx
+
+# Download TXT file
+curl -X POST "http://localhost:8000/transcribe" \
+  -F "file=@your_audio.mp3" \
+  -F "output_format=txt" \
+  --output transcription.txt
 ```
 
 **Text Response Example:**
@@ -256,6 +262,7 @@ audio-transcriber/
 
 - **Text**: JSON response with statistics
 - **DOCX**: Formatted Word document
+- **TXT**: Plain text file with transcription
 - **Download**: Direct file download
 
 ### UI Components
